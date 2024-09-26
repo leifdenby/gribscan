@@ -460,8 +460,9 @@ def build_refs(messages, global_attrs, coords, varinfo, magician):
         info = varinfo[key]
         cs = [coord[d] for d in info["dim_id"]]
         chunk_id = ".".join(
-            map(str, [coords_inv[d][c] for d, c in zip(info["dims"], cs)])
-        ) + ".0" * len(info["data_dims"])
+            list(map(str, [coords_inv[d][c] for d, c in zip(info["dims"], cs)]))
+            + ["0"] * len(info["data_dims"])
+        )
         refs[info["name"] + "/" + chunk_id] = [
             msg["filename"],
             msg["_offset"],
