@@ -6,6 +6,8 @@ from functools import partial
 from pathlib import Path
 import multiprocessing as mp
 
+from loguru import logger
+
 import click
 
 import gribscan
@@ -89,6 +91,7 @@ def create_index(sources, outdir, force, nprocs):
     type=click.Choice(MAGICIANS.keys()),
     help="Magician to use for dataset assembly.",
 )
+@logger.catch(reraise=True)
 def build_dataset(indices, glob_pattern, output, prefix, magician):
     """Build dataset references from index files."""
     if not glob_pattern and not indices:

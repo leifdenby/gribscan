@@ -186,8 +186,15 @@ class LatLonRotated(GribGrid):
 
         x = np.linspace(0, 1, Ni)
         y = np.linspace(0, 1, Nj)
-
-        return {"lon": lons, "lat": lats, "x": x, "y": y}
+        
+        return xr.Dataset(
+            coords={
+                "lat": (("x", "y"), lats, default_attrs["lat"]),
+                "lon": (("x", "y"), lons, default_attrs["lon"]),
+                "x": (("lon",), x, {"long_name": "x coordinate", "units": "1", "standard_name": "projection_x_coordinate"}),
+                "y": (("lat",), y, {"long_name": "y coordinate", "units": "1", "standard_name": "projection_y_coordinate"}),
+            }
+        )
     
 import functools
     
@@ -310,11 +317,17 @@ class Lambert(GribGrid):
         lats = np.rad2deg(phi) 
         lons = np.rad2deg(lambd)
                 
-        # TODO: would maybe be nice to communicate back that the "x" and "y"
-        # coordinates are actually "easting" and "northing" values
         x = easting_
         y = northing_
-        return {"lon": lons, "lat": lats, "x": x, "y": y}
+        
+        return xr.Dataset(
+            coords={
+                "lat": (("x", "y"), lats, default_attrs["lat"]),
+                "lon": (("x", "y"), lons, default_attrs["lon"]),
+                "x": (("lon",), x, {"long_name": "x coordinate (easting)", "units": "m", "standard_name": "projection_x_coordinate"}),
+                "y": (("lat",), y, {"long_name": "y coordinate (northing)", "units": "m", "standard_name": "projection_y_coordinate"}),
+            }
+        )
 
 import numba
 

@@ -505,7 +505,12 @@ def build_refs(messages, global_attrs, coords, varinfo, magician):
     # need to construct the inverse mapping from coordinate value to index. We
     # select out these "principal" coordinates here.
     principal_coords = {k: v for (k, v) in coords.items() if len(np.asarray(v).shape) == 1}
-    coords_inv = {k: {v: i for i, v in enumerate(vs)} for k, vs in principal_coords.items()}
+    # coords are now represented as xarray.DataArray objects; iterate over the
+    # underlying scalar values so keys are hashable.
+    coords_inv = {
+        k: {v: i for i, v in enumerate(np.asarray(vs).tolist())}
+        for k, vs in principal_coords.items()
+    }
 
     refs = {}
     for msg in messages:
