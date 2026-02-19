@@ -184,15 +184,18 @@ class LatLonRotated(GribGrid):
 
         lons, lats = rot_to_reg(lonPole, latPole, lons, lats)
 
+        # TODO: what should these coordinates actually be interpreted as? They
+        # are not really "x" and "y" coordinates in a projection, but we need
+        # some coordinates to index the data variables by
         x = np.linspace(0, 1, Ni)
         y = np.linspace(0, 1, Nj)
         
         return xr.Dataset(
             coords={
-                "lat": (("x", "y"), lats, default_attrs["lat"]),
-                "lon": (("x", "y"), lons, default_attrs["lon"]),
-                "x": (("lon",), x, {"long_name": "x coordinate", "units": "1", "standard_name": "projection_x_coordinate"}),
-                "y": (("lat",), y, {"long_name": "y coordinate", "units": "1", "standard_name": "projection_y_coordinate"}),
+                "lat": (("y", "x"), lats, default_attrs["lat"]),
+                "lon": (("y", "x"), lons, default_attrs["lon"]),
+                "x": (("x",), x, {"long_name": "x coordinate", "units": "1", "standard_name": "projection_x_coordinate"}),
+                "y": (("y",), y, {"long_name": "y coordinate", "units": "1", "standard_name": "projection_y_coordinate"}),
             }
         )
     
@@ -322,8 +325,8 @@ class Lambert(GribGrid):
         
         return xr.Dataset(
             coords={
-                "lat": (("x", "y"), lats, default_attrs["lat"]),
-                "lon": (("x", "y"), lons, default_attrs["lon"]),
+                "lat": (("y", "x"), lats, default_attrs["lat"]),
+                "lon": (("y", "x"), lons, default_attrs["lon"]),
                 "x": (("lon",), x, {"long_name": "x coordinate (easting)", "units": "m", "standard_name": "projection_x_coordinate"}),
                 "y": (("lat",), y, {"long_name": "y coordinate (northing)", "units": "m", "standard_name": "projection_y_coordinate"}),
             }

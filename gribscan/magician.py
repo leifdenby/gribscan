@@ -12,7 +12,8 @@ class MagicianBase:
         return global_attrs
 
     def coords_hook(self, name, coords):
-        return {}, coords, {}, [name], None
+        # return {}, coords, {}, [name], None
+        return coords, {}, None
 
     def m2key(self, meta):
         return tuple(meta[key] for key in self.varkeys), tuple(
@@ -164,29 +165,9 @@ class HarmonieMagician(MagicianBase):
         }
 
     def coords_hook(self, name, coords):
-        dims = [name]
         attrs = {}
         compressor = numcodecs.Blosc("zstd")
-        if "time" in name:
-            attrs = {
-                "units": "seconds since 1970-01-01T00:00:00",
-                "calendar": "proleptic_gregorian",
-            }
-        elif name == "lat":
-            dims = ["y", "x"]
-            attrs = {
-                "long_name": "latitude",
-                "units": "degrees_north",
-                "standard_name": "latitude",
-            }
-        elif name == "lon":
-            dims = ["y", "x"]
-            attrs = {
-                "long_name": "longitude",
-                "units": "degrees_east",
-                "standard_name": "longitude",
-            }
-        return attrs, coords, {}, dims, compressor
+        return coords, attrs, compressor
 
     def extra_coords(self, varinfo):
         v0 = next(iter(varinfo.values()))
@@ -194,11 +175,6 @@ class HarmonieMagician(MagicianBase):
 
     def m2dataset(self, meta):
         return meta["attrs"]["typeOfLevel"]
-        # return (
-        #     "atm3d"
-        #     if meta["attrs"]["typeOfLevel"].startswith("hybrid")
-        #     else "atm2d"
-        # )
 
 
 MAGICIANS = {
