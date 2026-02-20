@@ -134,6 +134,7 @@ EXTRA_PARAMETERS = [
     "forecastTime",
     "indicatorOfUnitOfTimeRange",
     "lengthOfTimeRange",
+    "typeOfStatisticalProcessing",
     "indicatorOfUnitForTimeRange",
     "productDefinitionTemplateNumber",
     "N",
@@ -299,6 +300,18 @@ def arrays_to_list(o):
         return o
 
 
+def _to_scalar(value):
+    if isinstance(value, list):
+        if len(value) == 0:
+            return None
+        return value[-1]
+    return value
+
+
+def _is_accumulated(type_of_statistical_processing):
+    return _to_scalar(type_of_statistical_processing) == 1
+
+
 def scan_gribfile(filelike, **kwargs):
     for offset, size, grib_edition, data in _split_file(filelike):
         mid = eccodes.codes_new_from_message(data)
@@ -353,6 +366,8 @@ def scan_gribfile(filelike, **kwargs):
             idx["param"] = param
         else:
             idx["param"] = ".".join(map(str, idx["parameter_code"].values()))
+        if _is_accumulated(idx["extra"].get("typeOfStatisticalProcessing")):
+            idx["param"] = f"{idx['param']}_accum"
 
         yield idx
 

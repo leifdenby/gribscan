@@ -1,7 +1,80 @@
+from dataclasses import dataclass
+from typing import Optional
+
 import numpy as np
 import numcodecs
 
 from .gridutils import varinfo2coords
+
+
+@dataclass
+class Grib2TimeStat:
+    # GRIB2 Code Table 4.10
+    type_of_statistical_processing: Optional[int]
+    # GRIB2 time range fields
+    length_of_time_range: Optional[int]
+    indicator_of_unit_of_time_range: Optional[int]  # Code Table 4.4
+
+
+_GRIB_TIME_UNITS = {
+    0: "minute",
+    1: "hour",
+    2: "day",
+    3: "month",
+    4: "year",
+    5: "decade",
+    6: "normal",
+    7: "century",
+    10: "3 hours",
+    11: "6 hours",
+    12: "12 hours",
+    13: "second",
+}
+
+_GRIB_STAT_TO_CF = {
+    0: "mean",
+    1: "sum",
+    2: "maximum",
+    3: "minimum",
+    4: "difference",
+    5: "rms",
+    6: "std",
+    7: "covariance",
+    8: "difference",  # absolute difference
+    9: "ratio",
+    10: "standard_deviation",
+    255: None,  # missing
+}
+
+
+def _to_scalar(value):
+    if isinstance(value, np.ndarray):
+        if value.size == 0:
+            return None
+        return int(value[-1])
+    return value
+
+
+def _format_interval(length: Optional[int], unit_code: Optional[int]) -> Optional[str]:
+    if length is None or unit_code is None:
+        return None
+    unit = _GRIB_TIME_UNITS.get(unit_code, f"unit_{unit_code}")
+    return f"{length} {unit}"
+
+
+def grib2_to_cf_cell_methods(meta: Grib2TimeStat) -> Optional[str]:
+    verb = _GRIB_STAT_TO_CF.get(meta.type_of_statistical_processing)
+    interval = _format_interval(
+        meta.length_of_time_range, meta.indicator_of_unit_of_time_range
+    )
+
+    if verb is None:
+        # No statistical processing. If no interval or zero interval, treat as instantaneous.
+        if interval is None or meta.length_of_time_range == 0:
+            return "time: point"
+        return None
+
+    return f"time: {verb} (interval: {interval})" if interval else f"time: {verb}"
 
 
 class MagicianBase:
@@ -145,6 +218,10 @@ class HarmonieMagician(MagicianBase):
         param, levtype = key
         name = param
         dims = info["dims"]
+        extra = info.get("extra", {})
+        type_of_statistical_processing = _to_scalar(
+            extra.get("typeOfStatisticalProcessing")
+        )
 
         if levtype == "generalVertical":
             name = param + "half" if param == "zg" else param
@@ -152,16 +229,34 @@ class HarmonieMagician(MagicianBase):
         if levtype == "generalVerticalLayer":
             dims = tuple("fulllevel" if dim == "level" else dim for dim in dims)
         dims = tuple("time" if dim == "posix_time" else dim for dim in dims)
+
+        cell_methods = grib2_to_cf_cell_methods(
+            Grib2TimeStat(
+                type_of_statistical_processing=type_of_statistical_processing,
+                length_of_time_range=_to_scalar(extra.get("lengthOfTimeRange")),
+                indicator_of_unit_of_time_range=_to_scalar(
+                    extra.get("indicatorOfUnitOfTimeRange")
+                ),
+            )
+        )
         
+        from loguru import logger
+        logger.debug(f"Variable {name} has attrs {info['attrs']} and cell_methods {cell_methods}")
+        logger.info(f"{extra=}")
+
+        attrs = {
+            **info["attrs"],
+            "coordinates": "lon lat",
+        }
+        if cell_methods is not None:
+            attrs["cell_methods"] = cell_methods
+
         return {
             "dims": dims,
             "data_dims": ["y", "x"],
             "data_shape": "__from_data_dims__",
             "name": name,
-            "attrs": {
-                **info["attrs"],
-                "coordinates": "lon lat",
-            },
+            "attrs": attrs,
         }
 
     def coords_hook(self, name, coords):
