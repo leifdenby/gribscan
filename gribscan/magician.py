@@ -239,10 +239,6 @@ class HarmonieMagician(MagicianBase):
                 ),
             )
         )
-        
-        from loguru import logger
-        logger.debug(f"Variable {name} has attrs {info['attrs']} and cell_methods {cell_methods}")
-        logger.info(f"{extra=}")
 
         attrs = {
             **info["attrs"],
