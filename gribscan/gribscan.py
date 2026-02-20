@@ -312,6 +312,16 @@ def _is_accumulated(type_of_statistical_processing):
     return _to_scalar(type_of_statistical_processing) == 1
 
 
+def _build_param_name(short_name, parameter_code, type_of_statistical_processing):
+    if short_name != "unknown":
+        param = short_name
+    else:
+        param = ".".join(map(str, parameter_code.values()))
+    if _is_accumulated(type_of_statistical_processing):
+        param = f"{param}_accum"
+    return param
+
+
 def scan_gribfile(filelike, **kwargs):
     for offset, size, grib_edition, data in _split_file(filelike):
         mid = eccodes.codes_new_from_message(data)
@@ -362,12 +372,11 @@ def scan_gribfile(filelike, **kwargs):
             **kwargs,
         }
 
-        if (param := m.get("shortName", "unknown")) != "unknown":
-            idx["param"] = param
-        else:
-            idx["param"] = ".".join(map(str, idx["parameter_code"].values()))
-        if _is_accumulated(idx["extra"].get("typeOfStatisticalProcessing")):
-            idx["param"] = f"{idx['param']}_accum"
+        idx["param"] = _build_param_name(
+            m.get("shortName", "unknown"),
+            idx["parameter_code"],
+            idx["extra"].get("typeOfStatisticalProcessing"),
+        )
 
         yield idx
 
