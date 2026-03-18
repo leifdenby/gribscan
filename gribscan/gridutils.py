@@ -327,8 +327,8 @@ class Lambert(GribGrid):
             coords={
                 "lat": (("y", "x"), lats, default_attrs["lat"]),
                 "lon": (("y", "x"), lons, default_attrs["lon"]),
-                "x": (("lon",), x, {"long_name": "x coordinate (easting)", "units": "m", "standard_name": "projection_x_coordinate"}),
-                "y": (("lat",), y, {"long_name": "y coordinate (northing)", "units": "m", "standard_name": "projection_y_coordinate"}),
+                "x": (("x",), x, {"long_name": "x coordinate (easting)", "units": "m", "standard_name": "projection_x_coordinate"}),
+                "y": (("y",), y, {"long_name": "y coordinate (northing)", "units": "m", "standard_name": "projection_y_coordinate"}),
             }
         )
 
